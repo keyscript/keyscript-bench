@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebAssembly vs. JavaScript Benchmark</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            color: #fff;
+        }
+
+        h1 {
+            text-align: center;
+            padding: 20px;
+            background-color: #111;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #222;
+            border: 1px solid #444;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        input {
+            width: 94%;
+            padding: 10px;
+            margin-right: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background-color: #888;
+            color: #000;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #00a2e8;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0079b3;
+        }
+
+        p {
+            margin-top: 20px;
+        }
+
+        #result {
+            font-size: 24px;
+            color: #00a2e8;
+        }
+    </style>
+</head>
+<body>
+<h1>WebAssembly vs. JavaScript Benchmark</h1>
+<div class="container">
+    <p>Click the button to calculate the 100th Fibonacci number:</p>
+    <button onclick="benchmarkFibonacci()">Benchmark</button>
+    <p>Result: <span id="result"></span></p>
+</div>
+<script>
+    let keyscriptFibonacci; // Function to calculate Fibonacci in KeyScript
+
+    // Load the WebAssembly module
+    (async function() {
+        const response = await fetch("output.wasm");
+        const bytes = await response.arrayBuffer();
+        const { instance } = await WebAssembly.instantiate(bytes, {
+            console: {
+                log: value => {
+                    console.log(value);
+                },
+            }});
+        keyscriptFibonacci = instance.exports.fib;
+    })();
+
+    async function jsFibonacci(n) {
+        if (n < 2) {
+            return n;
+        }
+        return jsFibonacci(n - 1) + jsFibonacci(n - 2);
+    }
+
+    function benchmarkFibonacci() {
+        const n = 40; // Calculate the 100th Fibonacci number
+        const jsStart = performance.now();
+        const jsResult = jsFibonacci(n);
+        const jsEnd = performance.now();
+
+        const keyscriptStart = performance.now();
+        const keyscriptResult = keyscriptFibonacci(BigInt(n));
+        const keyscriptEnd = performance.now();
+
+        console.log(`JavaScript Result: ${jsResult}`);
+        console.log(`KeyScript Result: ${keyscriptResult}`);
+
+        const jsTime = jsEnd - jsStart;
+        const keyscriptTime = keyscriptEnd - keyscriptStart;
+
+        document.getElementById('result').textContent = `JavaScript: ${jsTime.toFixed(2)} ms, KeyScript: ${keyscriptTime.toFixed(2)} ms`;
+
+        console.log(`JavaScript Result: ${jsResult}`);
+        console.log(`KeyScript Result: ${keyscriptResult}`);
+    }
+</script>
+</body>
+</html>
